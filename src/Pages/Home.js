@@ -14,9 +14,9 @@ function App() {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
-          <input type="button" value="Click to me" onClick={increment} />
+          <input type="button" value="Click" onClick={increment} />
         </p>
-        <p>{contador}</p> Click to me
+        <p>{contador}</p> Click 
       </header>
     </div>
   );
