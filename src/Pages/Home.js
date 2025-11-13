@@ -1,7 +1,5 @@
 import logo from '../logo.svg';
-import Header from '../Header';
-import { useState } from 'react';
-import {Link} from 'react-router-dom';
+import { useState } from 'react'
 
 function App() {
 
