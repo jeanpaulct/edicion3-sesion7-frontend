@@ -1,0 +1,71 @@
+name: Despliegue Automático
+
+on:
+  push:
+    branches:
+      - master # O la rama principal que usen
+
+jobs:
+  # 1. Tarea de Construcción (Build)
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Ajustar a la versión del proyecto
+      - name: Instalar dependencias
+        run: npm install
+      - name: Construir la aplicación
+        run: npm run build # Comando de build del proyecto
+
+      # Para compartir el artefacto de build con los despliegues
+      - name: Subir artefacto de build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            ./build
+            ./firebase.json
+
+
+  # 2. Tarea de Despliegue en Vercel
+  deploy-vercel:
+    needs: build # Depende del éxito de la tarea 'build'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar artefacto de build
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+
+      - name: Desplegar en Vercel
+        uses: vercel/actions-deploy@v0.2.1 # Usar la acción oficial
+        with:
+          # Usar los secretos configurados
+          token: ${{ secrets.VERCEL_TOKEN }}
+          orgId: ${{ secrets.VERCEL_ORG_ID }}
+          projectId: ${{ secrets.VERCEL_PROJECT_ID }}
+          # Otros parámetros opcionales
+          prod: true # Despliegue a producción en la rama principal
+
+  # 3. Tarea de Despliegue en Firebase
+  deploy-firebase:
+    needs: build # Depende del éxito de la tarea 'build'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar artefacto de build
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+
+      - name: Desplegar en Firebase Hosting
+        uses: w9jds/firebase-action@v2.4.0 # Una acción popular para Firebase
+        with:
+          # Usar el token de Firebase configurado como secreto
+          args: deploy --only hosting
+          project_id: <ID_DE_TU_PROYECTO_FIREBASE>
+          firebaseToken: ${{ secrets.FIREBASE_TOKEN }}
