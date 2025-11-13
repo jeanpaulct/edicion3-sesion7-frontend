@@ -98,3 +98,4 @@ jobs:
           # Pero la acción oficial usa la Cuenta de Servicio.
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           projectId: jeanpaulct-edicion3-frontend
+          channelId: live
