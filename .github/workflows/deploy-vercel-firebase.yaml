@@ -30,42 +30,61 @@ jobs:
             ./firebase.json
 
 
-  # 2. Tarea de Despliegue en Vercel
+  ## 2. Tarea de Despliegue en Vercel (Usando Vercel CLI)
   deploy-vercel:
-    needs: build # Depende del éxito de la tarea 'build'
+    needs: build 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout del código
+        uses: actions/checkout@v4
+        
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Asegurar que Node esté disponible
+          
       - name: Descargar artefacto de build
         uses: actions/download-artifact@v4
         with:
           name: build-output
-
+          path: .
+          
       - name: Desplegar en Vercel
-        uses: vercel/actions-deploy@v0.2.1 # Usar la acción oficial
-        with:
-          # Usar los secretos configurados
-          token: ${{ secrets.VERCEL_TOKEN }}
-          orgId: ${{ secrets.VERCEL_ORG_ID }}
-          projectId: ${{ secrets.VERCEL_PROJECT_ID }}
-          # Otros parámetros opcionales
-          prod: true # Despliegue a producción en la rama principal
+        # Usamos un 'run' script para instalar y ejecutar la CLI de Vercel
+        run: |
+          npm install -g vercel
+          # El comando 'vercel --prod' despliega el contenido de la carpeta de build
+          # Vercel automáticamente infiere el directorio de build si se ha usado 'vercel link'
+          vercel --prod
+        env:
+          # Vercel CLI utiliza esta variable para autenticarse
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          # Las siguientes variables ayudan a Vercel a identificar el proyecto
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-  # 3. Tarea de Despliegue en Firebase
+  ## 3. Tarea de Despliegue en Firebase (Usando la Acción de Firebase Extended)
   deploy-firebase:
-    needs: build # Depende del éxito de la tarea 'build'
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout del código
+        uses: actions/checkout@v4
+        
       - name: Descargar artefacto de build
         uses: actions/download-artifact@v4
         with:
           name: build-output
+          # Descarga el artefacto en la raíz del workspace
+          path: .
 
       - name: Desplegar en Firebase Hosting
-        uses: w9jds/firebase-action@v2.4.0 # Una acción popular para Firebase
+        # Usamos la acción oficial y mantenida por Firebase Extended
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          # Usar el token de Firebase configurado como secreto
-          args: deploy --only hosting
-          project_id: <ID_DE_TU_PROYECTO_FIREBASE>
-          firebaseToken: ${{ secrets.FIREBASE_TOKEN }}
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          # Firebase Hosting prefiere una cuenta de servicio (Service Account) para CI/CD
+          # Si deseas usar el antiguo FIREBASE_TOKEN, podrías necesitar otra acción
+          # Pero la acción oficial usa la Cuenta de Servicio.
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          projectId: ID_DE_TU_PROYECTO_FIREBASE
